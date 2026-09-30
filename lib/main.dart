@@ -1,4 +1,8 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 void main() {
   runApp(const MyApp());
@@ -82,6 +86,18 @@ class MatchPage extends StatefulWidget {
 
 class _MatchPageState extends State<MatchPage> {
   Player _selectedPlayer = players.first;
+  bool _resultOpened = false;
+
+  Future<void> _showResult() async {
+    if (_resultOpened || !mounted) return;
+    _resultOpened = true;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MatchResultPage(player: _selectedPlayer),
+      ),
+    );
+    _resultOpened = false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +114,7 @@ class _MatchPageState extends State<MatchPage> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
-              const Text('학습용 가상 경기 · 모든 이름과 기록은 가상 데이터입니다.'),
+              const Text('실제 경기 영상 · 선수 이름과 기록은 학습용 가상 데이터입니다.'),
               const SizedBox(height: 24),
               Text(
                 '1. 집중해서 볼 선수',
@@ -126,23 +142,7 @@ class _MatchPageState extends State<MatchPage> {
                 key: const Key('selected-player'),
               ),
               const SizedBox(height: 24),
-              const Card(
-                child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Column(
-                    children: [
-                      Icon(Icons.ondemand_video, size: 48),
-                      SizedBox(height: 12),
-                      Text('YouTube 경기 영상 준비 중'),
-                      SizedBox(height: 8),
-                      Text(
-                        '사용할 영상과 재생 방식을 확정한 뒤 연결합니다.\n현재는 선수 선택과 가상 기록을 확인할 수 있습니다.',
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              YouTubeMatchVideo(onEnded: _showResult),
               const SizedBox(height: 24),
               Text(
                 '2. ${_selectedPlayer.name}의 경기 정보',
@@ -172,19 +172,95 @@ class _MatchPageState extends State<MatchPage> {
                   style: FilledButton.styleFrom(minimumSize: const Size(0, 53)),
                   icon: const Icon(Icons.assessment_outlined),
                   label: const Text('경기 종료 기록 미리보기'),
-                  onPressed: () {
-                    // 영상 종료 연동 전에는 버튼으로 종료 화면을 확인합니다.
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) =>
-                            MatchResultPage(player: _selectedPlayer),
-                      ),
-                    );
-                  },
+                  onPressed: _showResult,
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class YouTubeMatchVideo extends StatefulWidget {
+  const YouTubeMatchVideo({super.key, required this.onEnded});
+
+  final VoidCallback onEnded;
+
+  @override
+  State<YouTubeMatchVideo> createState() => _YouTubeMatchVideoState();
+}
+
+class _YouTubeMatchVideoState extends State<YouTubeMatchVideo> {
+  YoutubePlayerController? _controller;
+  StreamSubscription<YoutubePlayerValue>? _playerSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    if (kIsWeb) {
+      // 사용자가 지정한 영상만 불러오고, 자동 재생은 하지 않습니다.
+      _controller = YoutubePlayerController.fromVideoId(
+        videoId: '9wx0QPdlPc8',
+        autoPlay: false,
+        params: const YoutubePlayerParams(
+          showControls: true,
+          showFullscreenButton: true,
+        ),
+      );
+      // 영상 종료 이벤트가 오면 선택 선수의 경기 종료 화면을 엽니다.
+      _playerSubscription = _controller!.listen((value) {
+        if (value.playerState == PlayerState.ended) widget.onEnded();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _playerSubscription?.cancel();
+    _controller?.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'YouTube 경기 영상',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            const Text('SPOTV FOOTBALL · 튀르키예 vs 이탈리아 하이라이트'),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final aspectHeight = constraints.maxWidth * 9 / 16;
+                // YouTube 플레이어는 높이가 최소 200px이어야 합니다.
+                final height = aspectHeight < 200 ? 200.0 : aspectHeight;
+                return SizedBox(
+                  width: double.infinity,
+                  height: height,
+                  child: kIsWeb
+                      ? YoutubePlayer(
+                          key: const ValueKey('youtube-match-player'),
+                          controller: _controller!,
+                          aspectRatio: constraints.maxWidth / height,
+                        )
+                      : const Center(
+                          child: Text('영상은 Chrome 웹앱에서 재생할 수 있습니다.'),
+                        ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            const Text('영상 출처: YouTube. 선수 이름과 경기 기록은 영상과 무관한 가상 데이터입니다.'),
+          ],
         ),
       ),
     );
@@ -239,7 +315,7 @@ class MatchResultPage extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
-              const Text('가상 경기 종료 화면 미리보기입니다.'),
+              const Text('가상 기록으로 만든 경기 종료 화면 미리보기입니다.'),
               const SizedBox(height: 24),
               Wrap(
                 spacing: 12,

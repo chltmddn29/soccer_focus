@@ -55,7 +55,7 @@ void main() {
     expect(find.text('0골'), findsOneWidget);
     expect(find.text('2개'), findsOneWidget);
     expect(find.text('85분'), findsOneWidget);
-    expect(find.text('가상 경기 종료 화면 미리보기입니다.'), findsOneWidget);
+    expect(find.text('가상 기록으로 만든 경기 종료 화면 미리보기입니다.'), findsOneWidget);
 
     await tester.tap(find.text('선수 선택으로 돌아가기'));
     await tester.pumpAndSettle();
