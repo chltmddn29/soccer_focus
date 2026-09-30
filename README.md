@@ -1,17 +1,108 @@
-# study_planner
+# 축구선수 포커스
 
-A new Flutter project.
+축구 경기에서 관심 선수 한 명을 집중해서 보고, 경기 종료 후 그 선수의 기록과 하이라이트를 확인하는 학습용 웹앱입니다. Flutter와 Dart로 만들며 Chrome에서 실행합니다.
 
-## Getting Started
+저장소 이름은 `study_planner`이고, 앱에 표시되는 이름은 **축구선수 포커스**입니다. 선수 이름과 경기 기록은 모두 가상 데이터입니다.
 
-This project is a starting point for a Flutter application.
+## 현재 구현 상태
 
-A few resources to get you started if this is your first Flutter project:
+현재는 영상 없이 선수 선택과 기록 화면을 확인할 수 있습니다.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+| 기능 | 상태 |
+| --- | --- |
+| 가상 선수 한 명 선택 및 다른 선수로 변경 | 구현 완료 |
+| 선택 선수의 이동 거리·골·어시스트·패스 표시 | 구현 완료 — 고정 가상 기록 |
+| 경기 종료 기록 미리보기에서 득점·도움·출전 시간 확인 | 구현 완료 — 버튼으로 이동 |
+| 기록 화면에서 돌아온 뒤 선수 선택 유지 | 구현 완료 |
+| YouTube 경기 영상 재생 | 미구현 |
+| 영상 시간과 선수 위치 데이터에 맞춘 포커스 테두리 이동 | 미구현 |
+| 영상 종료 시 경기 종료 화면으로 자동 이동 | 미구현 |
+| 하이라이트 재생·설명 저장·입력 검증 | 미구현 |
+| 새로고침 후 저장 목록 유지 (`localStorage`) | 미구현 |
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+영상 출처는 YouTube로 정했지만, 사용할 영상과 재생·임베드 방식은 아직 확정하지 않았습니다. 사용 권한과 재생 가능 여부를 확인한 뒤 연결할 예정입니다.
+
+## 개발 환경
+
+- Flutter SDK와 함께 제공되는 Dart SDK
+- Dart 버전 조건: `^3.13.4` (`pubspec.yaml` 기준)
+- Chrome
+- Git
+
+## 실행 방법
+
+저장소를 내려받고 프로젝트 폴더로 이동합니다. 비공개 저장소이므로 접근 권한이 있는 GitHub 계정이 필요합니다.
+
+```bash
+git clone https://github.com/chltmddn29/study_planner.git
+cd study_planner
+```
+
+기존 의존성을 설치하고 Chrome에서 실행합니다.
+
+```bash
+flutter pub get
+flutter run -d chrome
+```
+
+`web/index.html`을 직접 열지 않고 Flutter 명령으로 실행합니다. 같은 주소를 유지하려면 포트를 지정할 수 있습니다.
+
+```bash
+flutter run -d chrome --web-port=7357
+```
+
+## 현재 앱 사용 방법
+
+1. 선수 선택 영역에서 아무개, 누군가, 어떤이 중 한 명을 선택합니다.
+2. 선택 선수의 이동 거리, 골, 어시스트, 패스를 확인합니다.
+3. **경기 종료 기록 미리보기**를 눌러 득점, 도움, 출전 시간을 확인합니다.
+4. **선수 선택으로 돌아가기**를 누르면 이전 선수 선택이 유지됩니다.
+
+화면에 표시되는 가상 기록은 다음과 같습니다.
+
+| 선수 | 포지션 | 이동 거리 | 골 | 어시스트 | 패스 | 출전 시간 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 아무개 | 공격수 | 8.4 km | 2 | 1 | 32회 | 90분 |
+| 누군가 | 미드필더 | 10.2 km | 0 | 2 | 68회 | 85분 |
+| 어떤이 | 수비수 | 7.6 km | 0 | 0 | 45회 | 90분 |
+
+## 프로젝트 구성
+
+| 경로 | 역할 |
+| --- | --- |
+| `lib/main.dart` | 앱 시작점, 가상 선수 데이터, 선수 선택·경기 정보·종료 기록 화면 |
+| `test/widget_test.dart` | 선수 선택, 기록 표시, 화면 이동, 좁은 화면 동작 검사 |
+| `docs/` | 기획서, 요청 설계서, 개발 환경 확인 목록 |
+| `pubspec.yaml` | Dart 버전 조건, 의존성, Flutter 자산 설정 |
+| `web/` | Flutter Web 실행에 필요한 파일 |
+| `android/`, `ios/`, `linux/`, `macos/`, `windows/` | Flutter가 생성한 플랫폼 실행 파일 — 첫 구현 대상은 Chrome |
+| `AGENTS.md` | 개발 규칙과 완료 확인 절차 |
+
+## 변경 사항 확인
+
+앱 코드를 수정한 뒤 프로젝트 루트에서 실행합니다.
+
+```bash
+dart format lib test
+flutter analyze
+flutter test
+```
+
+현재 위젯 테스트는 선수 선택과 기록 표시, 종료 기록 화면 이동과 선택 유지, 좁은 화면 동작을 검사합니다. Chrome 화면 조작과 개발자 도구 Console의 앱 오류 확인은 별도로 수행해야 합니다.
+
+영상 관련 완료 기준은 영상 연결 후 확인합니다. 포커스 이동, 영상 종료 시 자동 이동, 하이라이트 저장과 입력 오류, 새로고침 후 저장 유지, 1분간 끊김 없는 재생은 아직 확인할 수 없습니다.
+
+## 후속 구현 범위
+
+영상과 재생 방식을 확정하면 미리 정의한 선수 위치 데이터에 맞춰 포커스 테두리를 이동시키고, 영상 종료 후 기록과 하이라이트 화면으로 연결할 예정입니다.
+
+하이라이트 저장 기능은 영상 참조와 설명만 브라우저 `localStorage`에 보관하도록 구현할 예정입니다. 영상 파일 자체를 저장하거나 저장 데이터를 서버로 보내지 않습니다. 저장 유지 여부는 같은 Chrome 브라우저와 같은 주소·포트에서 새로고침해 확인합니다.
+
+회원가입, 로그인, 서버, 공유, 실제 생중계 연결, 자동 영상 인식은 첫 구현 범위에서 제외합니다.
+
+## 관련 문서
+
+- [앱 기획서](docs/plan.md)
+- [프롬프트 설계서](docs/prompt-design.md)
+- [개발 환경 확인 목록](docs/env-check.md)
+- [작업 규칙과 완료 기준](AGENTS.md)
