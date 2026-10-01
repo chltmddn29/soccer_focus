@@ -173,8 +173,8 @@ void main() {
 
     await tester.pageBack();
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('selected-player')), findsNothing);
-    expect(find.byType(StatCard), findsNothing);
+    // 첫 화면은 지정 영상과 아르다 귈러가 기본으로 선택된 상태입니다.
+    expect(find.text('선택 선수: 아르다 귈러'), findsOneWidget);
     expect(find.byKey(const Key('new-youtube-url')), findsNothing);
   });
 
@@ -335,16 +335,17 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(const MyApp());
     expect(find.text('축구선수 포커스'), findsOneWidget);
-    expect(find.byKey(const Key('selected-player')), findsNothing);
-    expect(find.byType(StatCard), findsNothing);
-    expect(find.text('경기 종료 기록 미리보기'), findsNothing);
-    expect(find.textContaining('2026.9.28 튀르키예'), findsNothing);
+    // 첫 화면은 지정 영상과 아르다 귈러가 기본으로 선택된 상태입니다.
+    expect(find.text('선택 선수: 아르다 귈러'), findsOneWidget);
+    expect(find.byType(StatCard), findsNWidgets(4));
+    expect(find.text('경기 종료 기록 미리보기'), findsOneWidget);
+    expect(find.textContaining('2026.9.28 튀르키예'), findsOneWidget);
     expect(find.textContaining('선택한 영상이 없습니다.'), findsNothing);
 
     await tester.enterText(find.byKey(const Key('player-name-input')), '새 선수');
     await tester.pumpAndSettle();
     expect(find.text('선택 선수: 새 선수'), findsOneWidget);
-    expect(find.byType(StatCard), findsNothing);
+    expect(find.byType(StatCard), findsNWidgets(4));
     await tester.enterText(find.byKey(const Key('player-name-input')), '   ');
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('selected-player')), findsNothing);

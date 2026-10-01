@@ -479,6 +479,14 @@ const players = [
   ),
 ];
 
+// 사용자가 지정한 영상(9wx0QPdlPc8)과 선수로 첫 화면을 바로 보여 줍니다.
+const defaultMatchVideo = SavedHighlight(
+  videoId: '9wx0QPdlPc8',
+  startSeconds: 0,
+  description: '튀르키예 vs 이탈리아 하이라이트',
+  playerName: '아르다 귈러',
+);
+
 class MatchPage extends StatefulWidget {
   const MatchPage({super.key, this.storage, this.focusStorage});
 
@@ -490,10 +498,12 @@ class MatchPage extends StatefulWidget {
 }
 
 class _MatchPageState extends State<MatchPage> {
-  Player? _selectedPlayer;
-  final TextEditingController _playerNameController = TextEditingController();
+  Player? _selectedPlayer = players.first;
+  final TextEditingController _playerNameController = TextEditingController(
+    text: players.first.name,
+  );
   String? _playerInputError;
-  SavedHighlight? _selectedVideo;
+  SavedHighlight? _selectedVideo = defaultMatchVideo;
   bool _resultOpened = false;
   late final FocusTrackStorage _focusStorage =
       widget.focusStorage ?? BrowserHighlightStorage();
@@ -961,14 +971,21 @@ class _YouTubeMatchVideoState extends State<YouTubeMatchVideo> {
     await _persist(updated, '${seconds.toStringAsFixed(2)}초 위치를 저장했습니다.');
   }
 
+  // youtube_player_iframe 6.0.2의 seekTo는 인자를 2개(초, allowSeekAhead) 보내는데,
+  // 플레이어 쪽이 인자를 JSON.parse로 읽어 "4.5, true"에서 실패하고 조용히 무시됩니다.
+  // 그래서 인자가 하나뿐인 player.seekTo(초)를 직접 보냅니다.
+  Future<void> _seekTo(double seconds) async {
+    final controller = _controller;
+    if (controller == null) return;
+    final target = seconds.clamp(0, double.infinity).toDouble();
+    await controller.webViewController.runJavaScript('player.seekTo($target);');
+  }
+
   Future<void> _seekBy(double delta) async {
     final controller = _controller;
     if (controller == null) return;
     final now = await controller.currentTime;
-    await controller.seekTo(
-      seconds: (now + delta).clamp(0, double.infinity).toDouble(),
-      allowSeekAhead: true,
-    );
+    await _seekTo(now + delta);
   }
 
   Future<void> _readPausedPosition() async {
@@ -1169,6 +1186,17 @@ class _YouTubeMatchVideoState extends State<YouTubeMatchVideo> {
             ),
           ],
         ),
+        const SizedBox(height: 8),
+        // 위치를 기록할 때 정확한 재생 시각을 확인하도록 소수점 둘째 자리까지 보여 줍니다.
+        ValueListenableBuilder<Duration?>(
+          valueListenable: _focusPosition,
+          builder: (context, position, _) => Text(
+            position == null
+                ? '현재 시각: 영상을 재생하거나 일시정지하면 표시됩니다.'
+                : '현재 시각: ${(position.inMicroseconds / Duration.microsecondsPerSecond).toStringAsFixed(2)}초',
+            key: const Key('focus-current-time'),
+          ),
+        ),
         if (_editorMessage != null) ...[
           const SizedBox(height: 8),
           Text(_editorMessage!, key: const Key('focus-editor-message')),
@@ -1182,12 +1210,7 @@ class _YouTubeMatchVideoState extends State<YouTubeMatchVideo> {
               for (final sample in _saved)
                 InputChip(
                   label: Text('${sample.seconds.toStringAsFixed(2)}초'),
-                  onPressed: () => unawaited(
-                    _controller?.seekTo(
-                      seconds: sample.seconds,
-                      allowSeekAhead: true,
-                    ),
-                  ),
+                  onPressed: () => unawaited(_seekTo(sample.seconds)),
                   onDeleted: () => unawaited(
                     _persist(
                       _saved.where((item) => item != sample).toList(),
